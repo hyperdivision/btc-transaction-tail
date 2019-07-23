@@ -1,0 +1,25 @@
+{
+  "name": "@hyperdivision/btc-transaction-tail",
+  "version": "0.0.0",
+  "description": "Tails transactions on the Bitcoin blockchain",
+  "main": "index.js",
+  "dependencies": {
+    "bcoin": "^1.0.2"
+  },
+  "devDependencies": {
+    "standard": "^13.1.0"
+  },
+  "scripts": {
+    "test": "standard"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hyperdivision/btc-transaction-tail.git"
+  },
+  "author": "Mathias Buus (@mafintosh)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/hyperdivision/btc-transaction-tail/issues"
+  },
+  "homepage": "https://github.com/hyperdivision/btc-transaction-tail"
+}
