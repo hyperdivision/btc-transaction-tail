@@ -9,7 +9,7 @@ npm install @hyperdivision/btc-transaction-tail
 ## Usage
 
 ``` js
-const Tail = require('btc-transaction-tail')
+const Tail = require('@hyperdivision/btc-transaction-tail')
 
 const tail = new Tail({
   since: 424244, // tail chain since this seq (inclusive)
@@ -25,6 +25,8 @@ const tail = new Tail({
   }
 })
 
-// tail.index is the current block index
-await tail.start() // start tailing, will throw if an error is hit
+;(async function () {
+  // tail.index is the current block index
+  await tail.start() // start tailing, will throw if an error is hit
+})().catch(console.error)
 ```
