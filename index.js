@@ -6,7 +6,6 @@ module.exports = class BtcTransactionTail {
     if (!opts) opts = {}
 
     this.node = new FullNode({
-      network: 'main',
       config: true,
       argv: true,
       env: true,
@@ -18,7 +17,6 @@ module.exports = class BtcTransactionTail {
       memory: false,
       persistent: true,
       workers: true,
-      listen: true,
       loader: require
     })
 
