@@ -7,12 +7,11 @@ module.exports = class BtcTransactionTail {
 
     this.node = new FullNode({
       config: true,
-      argv: true,
       env: true,
-      // prune: true,
-      // logFile: true,
-      // logConsole: true,
-      // logLevel: 'info',
+      prefix: opts.prefix,
+      prune: !!opts.prune,
+      logConsole: !!opts.log,
+      logLevel: 'info',
       db: 'leveldb',
       memory: false,
       persistent: true,
@@ -20,16 +19,23 @@ module.exports = class BtcTransactionTail {
       loader: require
     })
 
+    this.started = false
+    this.prune = !!opts.prune
     this.index = opts.since || 0
     this.filter = opts.filter || (() => true)
     this.confirmations = opts.confirmations || 0
 
     this._transaction = opts.transaction || noop
     this._checkpoint = opts.checkpoint || noop
+    if (this.prune) interceptPrune(this)
   }
 
   _filter (addr) {
     return addr && this.filter(addr)
+  }
+
+  get height () {
+    return this.node.chain.tip.height
   }
 
   async _filterTx (tx) {
@@ -48,47 +54,68 @@ module.exports = class BtcTransactionTail {
     return false
   }
 
+  async _onblock (block, txs) {
+    const node = this.node
+    const blockData = block.toJSON()
+    const confirmations = node.chain.tip.height - blockData.height
+    if (confirmations < this.confirmations) return
+
+    for (let i = 0; i < txs.length; i++) {
+      const tx = txs[i]
+
+      if (await this._filterTx(tx)) {
+        const data = tx.toJSON()
+
+        const transaction = {
+          blockHash: blockData.hash,
+          blockNumber: blockData.height,
+          confirmations,
+          transactionIndex: i,
+          hash: data.hash,
+          inputs: data.inputs,
+          outputs: data.outputs
+        }
+
+        await this._transaction(transaction)
+      }
+    }
+
+    await this._checkpoint(++this.index)
+  }
+
   async start () {
     const node = this.node
 
-    await node.ensure()
-    await node.open()
-    await node.connect()
+    if (!this.started) {
+      await node.ensure()
+      await node.open()
+      await node.connect()
+      node.startSync()
+    }
 
-    node.startSync()
+    this.started = true
 
     while (true) {
-      await node.scan(this.index, filter, async (block, txs) => {
-        const blockData = block.toJSON()
-        const confirmations = node.chain.tip.height - blockData.height
-        if (confirmations < this.confirmations) return
+      await node.scan(this.index, filter, (block, txs) => this._onblock(block, txs))
 
-        for (let i = 0; i < txs.length; i++) {
-          const tx = txs[i]
+      do await sleep(1000)
+      while (node.chain.tip.height - this.index < this.confirmations)
+    }
+  }
+}
 
-          if (await this._filterTx(tx)) {
-            const data = tx.toJSON()
+function interceptPrune (self) {
+  let index = self.index
+  const db = self.node.chain.db
+  const pruneBlock = db.pruneBlock
 
-            const transaction = {
-              blockHash: blockData.hash,
-              blockNumber: blockData.height,
-              confirmations,
-              transactionIndex: i,
-              hash: data.hash,
-              inputs: data.inputs,
-              outputs: data.outputs
-            }
-
-            await this._transaction(transaction)
-          }
-        }
-
-        await this._checkpoint(++this.index)
-      })
-
-      do {
-        await sleep(1000)
-      } while (node.chain.tip.height - this.index < this.confirmations)
+  db.pruneBlock = async function () {
+    while (index < self.index) {
+      try { 
+      await pruneBlock.call(db, { height: index++ })
+      } catch (err) {
+        console.log('err', err)
+      }
     }
   }
 }
