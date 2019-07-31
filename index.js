@@ -8,6 +8,9 @@ module.exports = class BtcTransactionTail {
     this.node = new FullNode({
       config: true,
       env: true,
+      network: opts.network || 'main',
+      listen: !!opts.listen,
+      selfish: !!opts.selfish,
       prefix: opts.prefix,
       prune: !!opts.prune,
       logConsole: !!opts.log,
