@@ -18,7 +18,6 @@ module.exports = class BtcTransactionTail {
     }, opts.bcoin))
 
     this.started = false
-    this.prune = !!opts.prune
     this.index = opts.since || 0
     this.filter = opts.filter || (() => true)
     this.confirmations = opts.confirmations || 0
