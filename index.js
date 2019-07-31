@@ -5,22 +5,17 @@ module.exports = class BtcTransactionTail {
   constructor (opts) {
     if (!opts) opts = {}
 
-    this.node = new FullNode({
-      config: true,
-      env: true,
+    this.node = new FullNode(Object.assign({
       network: opts.network || 'main',
-      listen: !!opts.listen,
-      selfish: !!opts.selfish,
+      listen: false,
+      selfish: true,
       prefix: opts.prefix,
-      prune: !!opts.prune,
-      logConsole: !!opts.log,
-      logLevel: 'info',
+      prune: true,
       db: 'leveldb',
       memory: false,
       persistent: true,
-      workers: true,
-      loader: require
-    })
+      workers: true
+    }, opts.bcoin))
 
     this.started = false
     this.prune = !!opts.prune
@@ -114,7 +109,7 @@ function interceptPrune (self) {
 
   db.pruneBlock = async function () {
     while (index < self.index) {
-      try { 
+      try {
       await pruneBlock.call(db, { height: index++ })
       } catch (err) {
         console.log('err', err)
