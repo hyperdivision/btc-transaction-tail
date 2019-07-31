@@ -16,7 +16,7 @@
     "type": "git",
     "url": "https://github.com/hyperdivision/btc-transaction-tail.git"
   },
-  "author": "Mathias Buus (@mafintosh)",
+  "author": "Hyperdivision ApS",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/hyperdivision/btc-transaction-tail/issues"
