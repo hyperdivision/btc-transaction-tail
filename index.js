@@ -108,11 +108,7 @@ function interceptPrune (self) {
 
   db.pruneBlock = async function () {
     while (index < self.index) {
-      try {
-        await pruneBlock.call(db, { height: index++ })
-      } catch (err) {
-        console.log('err', err)
-      }
+      await pruneBlock.call(db, { height: index++ })
     }
   }
 }
