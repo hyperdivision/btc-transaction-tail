@@ -30,3 +30,31 @@ const tail = new Tail({
   await tail.start() // start tailing, will throw if an error is hit
 })().catch(console.error)
 ```
+
+## API
+
+### `const tail = new Tail(opts)`
+
+```js
+{
+  network: 'main',
+  since: 0,
+  confirmations: 0,
+  prefix: null, // Where to store chain data
+  // direction can be either IN or OUT symbol
+  async filter (addressString, direction) { return true },
+  async transaction (bcoin.TX) { },
+  async checkpoint (blockHeight) { },
+  // Pass options directly to bcoin FullNode
+  // May overwrite some of the previous opts
+  bcoin: {}
+}
+```
+
+### `Tail.IN`
+
+Signals a transaction that has a filtered address in the inputs
+
+### `Tail.OUT`
+
+Signals a transaction that has a filtered address in the output
