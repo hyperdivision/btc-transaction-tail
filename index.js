@@ -24,7 +24,8 @@ class BtcTransactionTail {
 
     this._transaction = opts.transaction || noop
     this._checkpoint = opts.checkpoint || noop
-    if (this.prune) interceptPrune(this)
+
+    interceptPrune(this)
   }
 
   _filter (addr) {
