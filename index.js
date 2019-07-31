@@ -1,7 +1,7 @@
 const { FullNode } = require('bcoin')
 const filter = { test: () => true, add () {} }
 
-module.exports = class BtcTransactionTail {
+class BtcTransactionTail {
   constructor (opts) {
     if (!opts) opts = {}
 
@@ -39,13 +39,13 @@ module.exports = class BtcTransactionTail {
     for (const inp of tx.inputs) {
       const data = inp.toJSON()
 
-      if (await this._filter(data.address, 'in')) return true
+      if (await this._filter(data.address, BtcTransactionTail.IN)) return true
     }
 
     for (const out of tx.outputs) {
       const data = out.toJSON()
 
-      if (await this._filter(data.address, 'out')) return true
+      if (await this._filter(data.address, BtcTransactionTail.OUT)) return true
     }
 
     return false
@@ -109,7 +109,7 @@ function interceptPrune (self) {
   db.pruneBlock = async function () {
     while (index < self.index) {
       try {
-      await pruneBlock.call(db, { height: index++ })
+        await pruneBlock.call(db, { height: index++ })
       } catch (err) {
         console.log('err', err)
       }
@@ -122,3 +122,8 @@ function sleep (ms) {
 }
 
 function noop () {}
+
+BtcTransactionTail.IN = Symbol('in')
+BtcTransactionTail.OUT = Symbol('out')
+
+module.exports = BtcTransactionTail

@@ -41,7 +41,8 @@ const tail = new Tail({
   since: 0,
   confirmations: 0,
   prefix: null, // Where to store chain data
-  async filter (addressString) { return true },
+  // direction can be either IN or OUT symbol
+  async filter (addressString, direction) { return true },
   async transaction (bcoin.TX) { },
   async checkpoint (blockHeight) { },
   // Pass options directly to bcoin FullNode
@@ -49,3 +50,11 @@ const tail = new Tail({
   bcoin: {}
 }
 ```
+
+### `Tail.IN`
+
+Signals a transaction that has a filtered address in the inputs
+
+### `Tail.OUT`
+
+Signals a transaction that has a filtered address in the output
