@@ -5,8 +5,8 @@ class BtcTransactionTail {
   constructor (opts) {
     if (!opts) opts = {}
 
-    this.node = new FullNode(Object.assign({
-      network: opts.network || 'main',
+    this.network = opts.network
+      network: opts.network,
       listen: false,
       selfish: true,
       prefix: opts.prefix,
