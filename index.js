@@ -40,13 +40,13 @@ class BtcTransactionTail {
 
   async _filterTx (tx) {
     for (const inp of tx.inputs) {
-      const data = inp.toJSON()
+      const data = inp.getJSON(this.network)
 
       if (await this._filter(data.address, BtcTransactionTail.IN)) return true
     }
 
     for (const out of tx.outputs) {
-      const data = out.toJSON()
+      const data = out.getJSON(this.network)
 
       if (await this._filter(data.address, BtcTransactionTail.OUT)) return true
     }
@@ -56,7 +56,7 @@ class BtcTransactionTail {
 
   async _onblock (block, txs) {
     const node = this.node
-    const blockData = block.toJSON()
+    const blockData = block
     const confirmations = node.chain.tip.height - blockData.height
     if (confirmations < this.confirmations) return
 
@@ -64,7 +64,7 @@ class BtcTransactionTail {
       const tx = txs[i]
 
       if (await this._filterTx(tx)) {
-        const data = tx.toJSON()
+        const data = tx.getJSON(this.network)
 
         const transaction = {
           blockHash: blockData.hash,
