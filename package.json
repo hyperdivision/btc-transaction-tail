@@ -4,7 +4,7 @@
   "description": "Tails transactions on the Bitcoin blockchain",
   "main": "index.js",
   "dependencies": {
-    "bcoin": "^1.0.2"
+    "bcoin": "github:bcoin-org/bcoin#cec3c3e788834d3e9fc3c0b21bc3e340d573dcfd"
   },
   "devDependencies": {
     "standard": "^13.1.0"

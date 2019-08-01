@@ -1,4 +1,4 @@
-const { FullNode } = require('bcoin')
+const ChainNode = require('./chain-node')
 const filter = { test: () => true, add () {} }
 
 class BtcTransactionTail {
@@ -6,6 +6,8 @@ class BtcTransactionTail {
     if (!opts) opts = {}
 
     this.network = opts.network
+
+    this.node = new ChainNode(Object.assign({
       network: opts.network,
       listen: false,
       selfish: true,
