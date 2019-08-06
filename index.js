@@ -20,14 +20,11 @@ class BtcTransactionTail {
     }, opts.bcoin))
 
     this.started = false
-    this.index = opts.since || 0
     this.filter = opts.filter || (() => true)
     this.confirmations = opts.confirmations || 0
 
     this._transaction = opts.transaction || noop
     this._checkpoint = opts.checkpoint || noop
-
-    interceptPrune(this)
   }
 
   _filter (addr) {
@@ -83,7 +80,7 @@ class BtcTransactionTail {
     await this._checkpoint(++this.index)
   }
 
-  async start () {
+  async start (since) {
     const node = this.node
 
     if (!this.started) {
@@ -94,6 +91,9 @@ class BtcTransactionTail {
     }
 
     this.started = true
+    this.index = since || 0
+
+    interceptPrune(this)
 
     while (true) {
       await node.scan(this.index, filter, (block, txs) => this._onblock(block, txs))
@@ -104,8 +104,7 @@ class BtcTransactionTail {
   }
 }
 
-function interceptPrune (self) {
-  let index = self.index
+function interceptPrune (self, index) {
   const db = self.node.chain.db
   const pruneBlock = db.pruneBlock
 

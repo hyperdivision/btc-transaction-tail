@@ -12,7 +12,6 @@ npm install @hyperdivision/btc-transaction-tail
 const Tail = require('@hyperdivision/btc-transaction-tail')
 
 const tail = new Tail({
-  since: 424244, // tail chain since this seq (inclusive)
   confirmations: 10, // require this many confirmations
   async filter (addr) {
     return isInterestingAddress(addr)
@@ -27,7 +26,8 @@ const tail = new Tail({
 
 ;(async function () {
   // tail.index is the current block index
-  await tail.start() // start tailing, will throw if an error is hit
+  // tail chain since this seq (inclusive)
+  await tail.start(424244) // start tailing, will throw if an error is hit
 })().catch(console.error)
 ```
 
@@ -38,7 +38,6 @@ const tail = new Tail({
 ```js
 {
   network: 'main',
-  since: 0,
   confirmations: 0,
   prefix: null, // Where to store chain data
   // direction can be either IN or OUT symbol
@@ -58,3 +57,5 @@ Signals a transaction that has a filtered address in the inputs
 ### `Tail.OUT`
 
 Signals a transaction that has a filtered address in the output
+
+### `tail.start(since = 0)`
