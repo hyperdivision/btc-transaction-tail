@@ -19,6 +19,7 @@ class BtcTransactionTail {
       workers: true
     }, opts.bcoin))
 
+    this.index = 0
     this.started = false
     this.filter = opts.filter || (() => true)
     this.confirmations = opts.confirmations || 0
@@ -91,7 +92,7 @@ class BtcTransactionTail {
     }
 
     this.started = true
-    this.index = since || 0
+    this.index = since || this.index
 
     interceptPrune(this, this.index)
 
