@@ -93,7 +93,7 @@ class BtcTransactionTail {
     this.started = true
     this.index = since || 0
 
-    interceptPrune(this)
+    interceptPrune(this, this.index)
 
     while (true) {
       await node.scan(this.index, filter, (block, txs) => this._onblock(block, txs))
