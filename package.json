@@ -1,6 +1,6 @@
 {
   "name": "@hyperdivision/btc-transaction-tail",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "Tails transactions on the Bitcoin blockchain",
   "main": "index.js",
   "dependencies": {
