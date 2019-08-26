@@ -96,11 +96,12 @@ class BtcTransactionTail {
 
     interceptPrune(this, this.index)
 
-    while (true) {
+    while (this.started) {
       await node.scan(this.index, filter, (block, txs) => this._onblock(block, txs))
 
       do await sleep(1000)
       while (node.chain.tip.height - this.index < this.confirmations)
+      while (this.started && node.chain.tip.height - this.index < this.confirmations)
     }
   }
 
