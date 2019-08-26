@@ -99,8 +99,8 @@ class BtcTransactionTail {
     while (this.started) {
       await node.scan(this.index, filter, (block, txs) => this._onblock(block, txs))
 
-      do await sleep(1000)
-      while (node.chain.tip.height - this.index < this.confirmations)
+      // suspend execution while we wait for more blocks
+      do await event(node, 'block')
       while (this.started && node.chain.tip.height - this.index < this.confirmations)
     }
   }
@@ -127,8 +127,10 @@ function interceptPrune (self, index) {
   }
 }
 
-function sleep (ms) {
-  return new Promise(resolve => setTimeout(resolve, ms))
+function event (ee, event) {
+  return new Promise(resolve => {
+    ee.once(event, resolve)
+  })
 }
 
 function noop () {}
