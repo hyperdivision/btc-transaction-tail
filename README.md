@@ -1,4 +1,6 @@
-# btc-transaction-tail
+# `@hyperdivision/btc-transaction-tail`
+
+[![Build Status](https://travis-ci.com/hyperdivision/btc-transaction-tail.svg?token=KyDcSdVQn6Rwq16oPikX&branch=master)](https://travis-ci.com/hyperdivision/btc-transaction-tail)
 
 Tails transactions on the Bitcoin blockchain
 
