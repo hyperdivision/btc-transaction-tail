@@ -59,3 +59,5 @@ Signals a transaction that has a filtered address in the inputs
 Signals a transaction that has a filtered address in the output
 
 ### `tail.start(since = 0)`
+
+### `tail.stop()`

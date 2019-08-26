@@ -103,6 +103,16 @@ class BtcTransactionTail {
       while (node.chain.tip.height - this.index < this.confirmations)
     }
   }
+
+  async stop () {
+    if (this.stated) {
+      this.node.stopSync()
+      await this.node.disconnect()
+      await this.node.close()
+    }
+
+    this.started = false
+  }
 }
 
 function interceptPrune (self, index) {
