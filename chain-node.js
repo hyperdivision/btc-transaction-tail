@@ -11,14 +11,12 @@ const assert = require('bsert')
 const { Chain, Fees, Mempool, Pool, Node, blockstore } = require('bcoin')
 
 /**
- * Full Node
- * Respresents a fullnode complete with a
- * chain, mempool, miner, etc.
- * @alias module:node.FullNode
+ * Chain Node
+ * Based on bcoin.FullNode
  * @extends Node
  */
 
-class FullNode extends Node {
+class ChainNode extends Node {
   /**
    * Create a full node.
    * @constructor
@@ -479,4 +477,4 @@ class FullNode extends Node {
  * Expose
  */
 
-module.exports = FullNode
+module.exports = ChainNode
