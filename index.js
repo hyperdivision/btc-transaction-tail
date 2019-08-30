@@ -100,8 +100,9 @@ class BtcTransactionTail {
       await node.scan(this.index, filter, (block, txs) => this._onblock(block, txs))
 
       // suspend execution while we wait for more blocks
-      do await event(node, 'block')
-      while (this.started && node.chain.tip.height - this.index < this.confirmations)
+      while (this.started && node.chain.tip.height - this.index < this.confirmations) {
+        await once(node, 'block')
+      }
     }
   }
 
