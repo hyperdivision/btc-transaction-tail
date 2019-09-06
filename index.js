@@ -128,7 +128,7 @@ function interceptPrune (self, index) {
   }
 }
 
-function event (ee, event) {
+function once (ee, event) {
   return new Promise(resolve => {
     ee.once(event, resolve)
   })
