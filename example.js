@@ -14,4 +14,8 @@ const t = new BitcoinTail({
   }
 })
 
-t.start(10).catch(console.log)
+;(async function () {
+  await t.start()
+
+  await t.scan(10)
+})()

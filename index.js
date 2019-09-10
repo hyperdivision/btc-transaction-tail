@@ -81,7 +81,7 @@ class BtcTransactionTail {
     await this._checkpoint(++this.index)
   }
 
-  async start (since) {
+  async start () {
     const node = this.node
 
     if (!this.started) {
@@ -92,6 +92,11 @@ class BtcTransactionTail {
     }
 
     this.started = true
+  }
+
+  async scan (since) {
+    if (!this.started) throw new Error('Must be started to scan')
+    const node = this.node
     this.index = since || this.index
 
     interceptPrune(this, this.index)
