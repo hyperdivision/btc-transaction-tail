@@ -27,6 +27,7 @@ class BtcTransactionTail {
     this._transaction = opts.transaction || noop
     this._checkpoint = opts.checkpoint || noop
     this._scanning = null
+    this._waitingForBlock = false
   }
 
   _filter (addr) {
@@ -105,7 +106,15 @@ class BtcTransactionTail {
 
       // suspend execution while we wait for more blocks
       while (this.started && node.chain.tip.height - this.index < this.confirmations) {
-        await once(node, 'block')
+        this._waitingForBlock = true
+        try {
+          await once(node, 'block')
+          this._waitingForBlock = false
+        } catch (err) {
+          if (!this.started) break
+          this._waitingForBlock = false
+          throw err
+        }
       }
     }
 
@@ -116,7 +125,7 @@ class BtcTransactionTail {
     const started = this.started
     this.started = false
     if (started) {
-      await this._scanning
+      if (!this._waitingForBlock) await this._scanning
       this.node.stopSync()
       await this.node.disconnect()
       await this.node.close()
