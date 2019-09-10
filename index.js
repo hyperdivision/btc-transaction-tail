@@ -111,8 +111,8 @@ class BtcTransactionTail {
           await once(node, 'block')
           this._waitingForBlock = false
         } catch (err) {
-          if (!this.started) break
           this._waitingForBlock = false
+          if (!this.started) break
           throw err
         }
       }
