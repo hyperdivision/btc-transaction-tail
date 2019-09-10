@@ -26,6 +26,7 @@ class BtcTransactionTail {
 
     this._transaction = opts.transaction || noop
     this._checkpoint = opts.checkpoint || noop
+    this._scanning = null
   }
 
   _filter (addr) {
@@ -94,6 +95,9 @@ class BtcTransactionTail {
     this.started = true
     this.index = since || this.index
 
+    let doneScanning = null
+    this._scanning = new Promise(resolve => doneScanning)
+
     interceptPrune(this, this.index)
 
     while (this.started) {
@@ -104,16 +108,19 @@ class BtcTransactionTail {
         await once(node, 'block')
       }
     }
+
+    doneScanning()
   }
 
   async stop () {
-    if (this.stated) {
+    const started = this.started
+    this.started = false
+    if (started) {
+      await this._scanning
       this.node.stopSync()
       await this.node.disconnect()
       await this.node.close()
     }
-
-    this.started = false
   }
 }
 
