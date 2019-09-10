@@ -97,7 +97,7 @@ class BtcTransactionTail {
     this.index = since || this.index
 
     let doneScanning = null
-    this._scanning = new Promise(resolve => doneScanning)
+    this._scanning = new Promise(resolve => { doneScanning = resolve })
 
     interceptPrune(this, this.index)
 
