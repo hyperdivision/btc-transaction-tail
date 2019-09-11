@@ -29,7 +29,8 @@ const tail = new Tail({
 ;(async function () {
   // tail.index is the current block index
   // tail chain since this seq (inclusive)
-  await tail.start(424244) // start tailing, will throw if an error is hit
+  await tail.start() // start tailing, will throw if an error is hit
+  await tail.scan(424244)
 })().catch(console.error)
 ```
 
@@ -60,6 +61,8 @@ Signals a transaction that has a filtered address in the inputs
 
 Signals a transaction that has a filtered address in the output
 
-### `tail.start(since = 0)`
+### `tail.start()`
+
+### `tail.scan(since = 0)`
 
 ### `tail.stop()`

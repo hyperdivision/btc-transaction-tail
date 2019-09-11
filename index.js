@@ -83,7 +83,7 @@ class BtcTransactionTail {
     await this._checkpoint(++this.index)
   }
 
-  async start (since) {
+  async start () {
     const node = this.node
 
     if (!this.started) {
@@ -94,12 +94,15 @@ class BtcTransactionTail {
     }
 
     this.started = true
+  }
+
+  async scan (since) {
+    const node = this.node
+
     this.index = since || this.index
 
     let doneScanning = null
     this._scanning = new Promise(resolve => { doneScanning = resolve })
-
-    interceptPrune(this, this.index)
 
     while (this.started) {
       await node.scan(this.index, filter, (block, txs) => this._onblock(block, txs))
@@ -129,17 +132,6 @@ class BtcTransactionTail {
       this.node.stopSync()
       await this.node.disconnect()
       await this.node.close()
-    }
-  }
-}
-
-function interceptPrune (self, index) {
-  const db = self.node.chain.db
-  const pruneBlock = db.pruneBlock
-
-  db.pruneBlock = async function () {
-    while (index < self.index) {
-      await pruneBlock.call(db, { height: index++ })
     }
   }
 }
