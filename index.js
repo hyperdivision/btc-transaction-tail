@@ -73,7 +73,8 @@ class BtcTransactionTail {
           transactionIndex: i,
           hash: data.hash,
           inputs: data.inputs,
-          outputs: data.outputs
+          outputs: data.outputs,
+          time: new Date(blockData.time * 1000)
         }
 
         await this._transaction(transaction)
