@@ -3,7 +3,7 @@ const BitcoinTail = require('./')
 const t = new BitcoinTail({
   confirmations: 100,
   transaction (t) {
-    console.log(t.blockNumber, t.confirmations)
+    console.log(t.blockNumber, t.confirmations, t.time)
   },
   checkpoint (index) {
     console.log('should start at', index)
@@ -14,4 +14,6 @@ const t = new BitcoinTail({
   }
 })
 
-t.start(10).catch(console.log)
+t.start().then(() => {
+  t.scan(0).catch(console.log)
+}).catch(console.log)
