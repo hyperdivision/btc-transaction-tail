@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-docker run -p 18443:18443 -p 18444:18444 --rm ruimarinho/bitcoin-core  \
+docker run $@ -p 18443:18443 -p 18444:18444 --rm ruimarinho/bitcoin-core  \
   -regtest=1 \
   -printtoconsole \
   -rpcallowip=0.0.0.0/0 \
