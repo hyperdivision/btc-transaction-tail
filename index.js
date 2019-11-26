@@ -106,6 +106,7 @@ class BtcTransactionTail {
 
           await this._transaction(transaction)
           this._lastBlockHeight = blockData.height
+          if (!this.started) return
         }
       }
 
