@@ -16,7 +16,7 @@ async function createNodes (nodes = 2) {
     })
 
     const node1 = new Node(client1)
-    await node1.init('legacy')
+    await node1.init('bech32')
     res.push(node1)
   }
 
@@ -49,10 +49,10 @@ async function setup () {
 
 async function reset () {
   const [node1, node2] = await createNodes()
-  await node1.init('legacy')
+  await node1.init('bech32')
   await node1.reorg(await node1.client.getBlockCount())
   await node1.reset()
-  await node2.init('legacy')
+  await node2.init('bech32')
   await node2.reorg(await node2.client.getBlockCount())
   await node2.reset()
   return [node1, node2]

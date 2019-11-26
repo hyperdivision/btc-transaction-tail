@@ -22,7 +22,6 @@ tape('reorg', async function (t) {
         }
         if (tx.hash === (await s).txid) {
           t.notEqual(tx.blockNumber, prevTx.blockNumber, 'same tx, different block')
-          t.fail('Saw same transaction after reorg')
           return
         }
         return
@@ -57,7 +56,7 @@ tape('reorg', async function (t) {
 })
 
 tape('reorg one', async function (t) {
-  const [node1] = await createNodes(1)
+  const [node1, node2] = await createNodes(2)
 
   let since = -1
   let reorged = -1
@@ -103,7 +102,7 @@ tape('reorg one', async function (t) {
   const start = await node1.client.getBlockCount() + 1
   tail.scan(start)
 
-  const s = node1.simpleSend(123, ['n2GVdCHnTW9wNfikQJNqNw7E1cpcMM4Qei'], 0, false)
+  const s = node1.simpleSend(123, [node2.genAddress], 0, false)
   await s
   const c = node1.confirm(1)
 })
