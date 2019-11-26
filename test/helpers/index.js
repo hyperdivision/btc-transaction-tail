@@ -29,9 +29,7 @@ function createTail (opts = {}) {
     confirmations: 0,
     bcoin: {
       memory: true,
-      persistent: true,
       nodes: ['localhost:18444']
-      // logLevel: 'info'
     },
     ...opts
   })
