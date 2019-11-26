@@ -1,10 +1,12 @@
 const ChainNode = require('./chain-node')
+const EventEmitter = require('events')
 const filter = { test: () => true, add () {} }
 
 const STOPPED = new Error('STOPPED')
 
-class BtcTransactionTail {
+class BtcTransactionTail extends EventEmitter {
   constructor (opts) {
+    super()
     if (!opts) opts = {}
 
     this.network = opts.network
@@ -20,6 +22,14 @@ class BtcTransactionTail {
       persistent: true,
       workers: true
     }, opts.bcoin))
+
+    this.node.mempool.on('tx', (tx) => {
+      this.emit('mempool-add', tx)
+    })
+
+    this.node.mempool.on('remove entry', (entry) => {
+      this.emit('mempool-remove', entry.tx)
+    })
 
     this.index = 0
     this.started = false
