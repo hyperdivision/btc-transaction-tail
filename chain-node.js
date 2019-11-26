@@ -125,7 +125,7 @@ class ChainNode extends Node {
     this.pool.on('error', err => this.error(err))
 
     this.mempool.on('tx', (tx) => {
-      this.miner.cpu.notifyEntry()
+      if (this.miner) this.miner.cpu.notifyEntry()
       this.emit('tx', tx)
     })
 
