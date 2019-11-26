@@ -30,7 +30,7 @@ function createTail (opts = {}) {
     bcoin: {
       memory: true,
       persistent: true,
-      nodes: ['localhost:18444'],
+      nodes: ['localhost:18444']
       // logLevel: 'info'
     },
     ...opts
@@ -56,21 +56,4 @@ async function reset () {
   await node2.reorg(await node2.client.getBlockCount())
   await node2.reset()
   return [node1, node2]
-}
-
-
-function createTail (opts = {}) {
-  const t = new Tail({
-    network: 'regtest',
-    confirmations: 0,
-    bcoin: {
-      memory: true,
-      persistent: true,
-      nodes: ['localhost:18444'],
-      // logLevel: 'info'
-    },
-    ...opts
-  })
-
-  return t
 }
