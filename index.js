@@ -1,6 +1,8 @@
 const ChainNode = require('./chain-node')
 const filter = { test: () => true, add () {} }
 
+const STOPPED = new Error('STOPPED')
+
 class BtcTransactionTail {
   constructor (opts) {
     if (!opts) opts = {}
@@ -24,14 +26,19 @@ class BtcTransactionTail {
     this.filter = opts.filter || (() => true)
     this.confirmations = opts.confirmations || 0
 
+    this._lastBlockHeight = -1
     this._transaction = opts.transaction || noop
     this._checkpoint = opts.checkpoint || noop
+    this._reorganize = opts.reorganize || noop
     this._scanning = null
-    this._waitingForBlock = false
+    this._reorging = null
+    this._waitingForBlock = null
+    this._reorgs = 0
+    this._fork = 0
   }
 
-  _filter (addr) {
-    return addr && this.filter(addr)
+  _filter (addr, dir) {
+    return addr && this.filter(addr, dir)
   }
 
   get height () {
@@ -54,36 +61,6 @@ class BtcTransactionTail {
     return false
   }
 
-  async _onblock (block, txs) {
-    const node = this.node
-    const blockData = block
-    const confirmations = node.chain.tip.height - blockData.height
-    if (confirmations < this.confirmations) return
-
-    for (let i = 0; i < txs.length; i++) {
-      const tx = txs[i]
-
-      if (await this._filterTx(tx)) {
-        const data = tx.getJSON(this.network)
-
-        const transaction = {
-          blockHash: blockData.hash,
-          blockNumber: blockData.height,
-          confirmations,
-          transactionIndex: i,
-          hash: data.hash,
-          inputs: data.inputs,
-          outputs: data.outputs,
-          time: new Date(blockData.time * 1000)
-        }
-
-        await this._transaction(transaction)
-      }
-    }
-
-    await this._checkpoint(++this.index)
-  }
-
   async start () {
     const node = this.node
 
@@ -92,6 +69,7 @@ class BtcTransactionTail {
       await node.open()
       await node.connect()
       node.startSync()
+      this._interceptReorgs()
     }
 
     this.started = true
@@ -99,48 +77,136 @@ class BtcTransactionTail {
 
   async scan (since) {
     const node = this.node
+    const reorgs = this._reorgs
 
-    this.index = since || this.index
+    const onblock = async (block, txs) => {
+      if (this._reorgs !== reorgs) throw STOPPED
+
+      const node = this.node
+      const blockData = block
+      const confirmations = node.chain.tip.height - blockData.height
+      if (confirmations < this.confirmations) return
+
+      for (let i = 0; i < txs.length; i++) {
+        const tx = txs[i]
+
+        if (await this._filterTx(tx)) {
+          const data = tx.getJSON(this.network)
+
+          const transaction = {
+            blockHash: blockData.hash,
+            blockNumber: blockData.height,
+            confirmations,
+            transactionIndex: i,
+            hash: data.hash,
+            inputs: data.inputs,
+            outputs: data.outputs,
+            time: new Date(blockData.time * 1000)
+          }
+
+          await this._transaction(transaction)
+          this._lastBlockHeight = blockData.height
+          if (!this.started) return
+        }
+      }
+
+      await this._checkpoint(++this.index)
+      if (this._reorgs !== reorgs) throw STOPPED
+    }
+
+    this.index = since === 0 ? 0 : (since || this.index)
 
     let doneScanning = null
     this._scanning = new Promise(resolve => { doneScanning = resolve })
 
-    while (this.started) {
-      await node.scan(this.index, filter, (block, txs) => this._onblock(block, txs))
+    while (this._reorgs === reorgs && this.started) {
+      try {
+        await node.scan(this.index, filter, onblock)
+      } catch (err) {
+        if (err === STOPPED) break
+        throw err
+      }
 
       // suspend execution while we wait for more blocks
-      while (this.started && node.chain.tip.height - this.index < this.confirmations) {
-        this._waitingForBlock = true
-        try {
-          await once(node, 'block')
-          this._waitingForBlock = false
-        } catch (err) {
-          this._waitingForBlock = false
-          if (!this.started) break
-          throw err
-        }
+      while (this._reorgs === reorgs && this.started && node.chain.tip.height - this.index < this.confirmations) {
+        this._waitingForBlock = once(node, 'block')
+        await this._waitingForBlock.promise
+        this._waitingForBlock = null
       }
     }
 
     doneScanning()
+
+    if (this._reorgs !== reorgs) {
+      await this._reorging
+      return this.scan(this._fork)
+    }
   }
 
   async stop () {
     const started = this.started
     this.started = false
     if (started) {
-      if (!this._waitingForBlock) await this._scanning
+      if (this._waitingForBlock) this._waitingForBlock.stop()
+      await this._scanning
       this.node.stopSync()
       await this.node.disconnect()
       await this.node.close()
     }
   }
+
+  _interceptReorgs () {
+    const reorganize = this.node.chain.reorganize
+    this.node.chain.reorganize = async (competitor) => {
+      const tip = this.node.chain.tip
+
+      let doneResolve
+      let doneReject
+
+      this._reorging = new Promise((resolve, reject) => {
+        doneResolve = resolve
+        doneReject = reject
+      })
+
+      this._reorgs++
+
+      if (this._waitingForBlock) this._waitingForBlock.stop()
+      await this._scanning
+
+      const fork = await this.node.chain.findFork(tip, competitor)
+
+      if (fork.height >= this._lastBlockHeight) { // we havent seen any of the reorg'ed tx so just continue
+        this._fork = this.index
+      } else { // notify the user
+        const index = this._fork = fork.height + 1
+
+        try {
+          await this._reorganize(index, fork)
+        } catch (err) {
+          doneReject(err)
+          return new Promise(() => {}) // "block" the reorg so it does not retry
+        }
+      }
+
+      const res = await reorganize.call(this.node.chain, competitor)
+      doneResolve()
+      return res
+    }
+  }
 }
 
 function once (ee, event) {
-  return new Promise(resolve => {
+  let stop
+
+  const promise = new Promise(resolve => {
     ee.once(event, resolve)
+    stop = () => {
+      ee.removeListener(event, resolve)
+      resolve()
+    }
   })
+
+  return { promise, stop }
 }
 
 function noop () {}

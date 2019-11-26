@@ -10,3 +10,9 @@ deploy:
   on:
     tags: true
     node: lts/*
+services:
+  - docker
+before_install:
+  - docker pull ruimarinho/bitcoin-core
+  - ./test/helpers/docker.sh -d
+  - sleep 5

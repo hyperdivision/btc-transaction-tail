@@ -7,10 +7,13 @@
     "bcoin": "github:bcoin-org/bcoin#cec3c3e788834d3e9fc3c0b21bc3e340d573dcfd"
   },
   "devDependencies": {
-    "standard": "^13.1.0"
+    "bitcoin-core": "^3.0.0",
+    "bitcoind-coinbase-test": "^1.1.12",
+    "standard": "^13.1.0",
+    "tape": "^4.11.0"
   },
   "scripts": {
-    "test": "standard"
+    "test": "standard && tape test/*.js"
   },
   "repository": {
     "type": "git",

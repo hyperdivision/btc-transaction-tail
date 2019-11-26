@@ -23,6 +23,10 @@ const tail = new Tail({
   },
   async checkpoint (since) {
     // store this since so you can restart from here
+  },
+  async reorganize (since) {
+    // all transactions/blocks with blockNumber >= since have been
+    // reorganized
   }
 })
 
@@ -47,6 +51,7 @@ const tail = new Tail({
   async filter (addressString, direction) { return true },
   async transaction (bcoin.TX) { },
   async checkpoint (blockHeight) { },
+  async reorganize (blockHeight) {}
   // Pass options directly to bcoin FullNode
   // May overwrite some of the previous opts
   bcoin: {}
