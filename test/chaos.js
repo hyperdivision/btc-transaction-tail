@@ -101,10 +101,6 @@ tape('chaos', async function (t) {
   }
 })
 
-function sleep (ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms))
-}
-
 async function expected (client) {
   const m = new Map()
   for (const e of await client.listAddressGroupings()) {
