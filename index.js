@@ -23,12 +23,24 @@ class BtcTransactionTail extends EventEmitter {
       workers: true
     }, opts.bcoin))
 
-    this.node.mempool.on('tx', (tx) => {
-      this.emit('mempool-add', tx)
+    this.node.mempool.on('tx', async (tx) => {
+      try {
+        if (!await this._filterTx(tx)) return
+      } catch (_) {
+        return
+      }
+
+      this.emit('mempool-add', this._makeTx(tx))
     })
 
-    this.node.mempool.on('remove entry', (entry) => {
-      this.emit('mempool-remove', entry.tx)
+    this.node.mempool.on('remove entry', async (entry) => {
+      try {
+        if (!await this._filterTx(entry.tx)) return
+      } catch (_) {
+        return
+      }
+
+      this.emit('mempool-remove', this._makeTx(entry.tx))
     })
 
     this.index = 0
@@ -45,6 +57,17 @@ class BtcTransactionTail extends EventEmitter {
     this._waitingForBlock = null
     this._reorgs = 0
     this._fork = 0
+  }
+
+  _makeTx (tx) {
+    const data = tx.getJSON(this.network)
+    return {
+      hash: data.hash,
+      inputs: data.inputs,
+      outputs: data.outputs,
+      locktime: data.locktime,
+      time: new Date(data.mtime * 1000)
+    }
   }
 
   _filter (addr, dir) {
