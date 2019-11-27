@@ -23,6 +23,16 @@ class BtcTransactionTail extends EventEmitter {
       workers: true
     }, opts.bcoin))
 
+    let reasonTx = null
+    let reason = null
+
+    const getReason = (tx) => {
+      const r = reason
+      const t = reasonTx
+      reason = reasonTx = null
+      return (t === tx ? r : BtcTransactionTail.OTHER) || BtcTransactionTail.OTHER
+    }
+
     this.node.mempool.on('tx', async (tx) => {
       try {
         if (!await this._filterTx(tx)) return
@@ -30,7 +40,17 @@ class BtcTransactionTail extends EventEmitter {
         return
       }
 
-      this.emit('mempool-add', this._makeTx(tx))
+      this.emit('mempool-add', this._makeTx(tx), getReason(tx))
+    })
+
+    this.node.mempool.on('confirmed', function (tx) {
+      reasonTx = tx
+      reason = BtcTransactionTail.CONFIRMED
+    })
+
+    this.node.mempool.on('unconfirmed', function (tx) {
+      reasonTx = tx
+      reason = BtcTransactionTail.UNCONFIRMED
     })
 
     this.node.mempool.on('remove entry', async (entry) => {
@@ -40,7 +60,7 @@ class BtcTransactionTail extends EventEmitter {
         return
       }
 
-      this.emit('mempool-remove', this._makeTx(entry.tx))
+      this.emit('mempool-remove', this._makeTx(entry.tx), getReason(entry.tx))
     })
 
     this.index = 0
@@ -246,5 +266,8 @@ function noop () {}
 
 BtcTransactionTail.IN = Symbol('in')
 BtcTransactionTail.OUT = Symbol('out')
+BtcTransactionTail.CONFIRMED = Symbol('confirmed')
+BtcTransactionTail.UNCONFIRMED = Symbol('unconfirmed')
+BtcTransactionTail.OTHER = Symbol('other')
 
 module.exports = BtcTransactionTail
