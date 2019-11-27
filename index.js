@@ -1,10 +1,12 @@
 const ChainNode = require('./chain-node')
+const EventEmitter = require('events')
 const filter = { test: () => true, add () {} }
 
 const STOPPED = new Error('STOPPED')
 
-class BtcTransactionTail {
+class BtcTransactionTail extends EventEmitter {
   constructor (opts) {
+    super()
     if (!opts) opts = {}
 
     this.network = opts.network
@@ -21,6 +23,46 @@ class BtcTransactionTail {
       workers: true
     }, opts.bcoin))
 
+    let reasonTx = null
+    let reason = null
+
+    const getReason = (tx) => {
+      const r = reason
+      const t = reasonTx
+      reason = reasonTx = null
+      return (t === tx ? r : BtcTransactionTail.OTHER) || BtcTransactionTail.OTHER
+    }
+
+    this.node.mempool.on('tx', async (tx) => {
+      try {
+        if (!await this._filterTx(tx)) return
+      } catch (_) {
+        return
+      }
+
+      this.emit('mempool-add', this._makeTx(tx), getReason(tx))
+    })
+
+    this.node.mempool.on('confirmed', function (tx) {
+      reasonTx = tx
+      reason = BtcTransactionTail.CONFIRMED
+    })
+
+    this.node.mempool.on('unconfirmed', function (tx) {
+      reasonTx = tx
+      reason = BtcTransactionTail.UNCONFIRMED
+    })
+
+    this.node.mempool.on('remove entry', async (entry) => {
+      try {
+        if (!await this._filterTx(entry.tx)) return
+      } catch (_) {
+        return
+      }
+
+      this.emit('mempool-remove', this._makeTx(entry.tx), getReason(entry.tx))
+    })
+
     this.index = 0
     this.started = false
     this.filter = opts.filter || (() => true)
@@ -35,6 +77,17 @@ class BtcTransactionTail {
     this._waitingForBlock = null
     this._reorgs = 0
     this._fork = 0
+  }
+
+  _makeTx (tx) {
+    const data = tx.getJSON(this.network)
+    return {
+      hash: data.hash,
+      inputs: data.inputs,
+      outputs: data.outputs,
+      locktime: data.locktime,
+      time: new Date(data.mtime * 1000)
+    }
   }
 
   _filter (addr, dir) {
@@ -213,5 +266,8 @@ function noop () {}
 
 BtcTransactionTail.IN = Symbol('in')
 BtcTransactionTail.OUT = Symbol('out')
+BtcTransactionTail.CONFIRMED = Symbol('confirmed')
+BtcTransactionTail.UNCONFIRMED = Symbol('unconfirmed')
+BtcTransactionTail.OTHER = Symbol('other')
 
 module.exports = BtcTransactionTail

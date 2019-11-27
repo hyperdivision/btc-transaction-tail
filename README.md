@@ -71,3 +71,11 @@ Signals a transaction that has a filtered address in the output
 ### `tail.scan(since = 0)`
 
 ### `tail.stop()`
+
+### `tail.on('mempool-add', tx)`
+
+Emitted when a transaction is added to the mempool
+
+### `tail.on('mempool-remove', tx)`
+
+Emitted when a transaction is removed from the mempool
