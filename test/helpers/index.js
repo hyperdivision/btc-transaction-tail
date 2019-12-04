@@ -1,5 +1,5 @@
 const Client = require('bitcoin-core')
-const Node = require('bitcoind-coinbase-test')
+const Node = require('bitcoin-test-util')
 const Tail = require('../../')
 
 module.exports = { createNodes, reset, setup, createTail }

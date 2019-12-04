@@ -13,19 +13,24 @@ tape('mempool tracking', async function (t) {
   const tail = createTail()
 
   await tail.start()
+  let txp = null
 
   tail.on('mempool-add', async function (tx) {
-    t.same(tx.hash, (await txp).txid, 'added transaction to mempool')
+    if (txp && tx.hash === (await txp).txid) {
+      t.same(tx.hash, (await txp).txid, 'added transaction to mempool')
+    }
   })
 
   tail.on('mempool-remove', async function (tx) {
-    t.same(tx.hash, (await txp).txid, 'removed transaction from mempool')
-    tail.stop().then(() => t.end())
+    if (txp && tx.hash === (await txp).txid) {
+      t.same(tx.hash, (await txp).txid, 'removed transaction from mempool')
+      tail.stop().then(() => t.end())
+    }
   })
 
   await sleep(5000)
 
-  const txp = n1.simpleSend(10, [n2.genAddress], undefined, false)
+  txp = n1.simpleSend(10, [n2.genAddress], undefined, false)
 
   await txp
   await sleep(10000)
@@ -33,11 +38,12 @@ tape('mempool tracking', async function (t) {
   await n1.confirm()
 })
 
-tape('mempool consistency', async function (t) {
+tape.skip('mempool consistency', async function (t) {
   const [n1, n2] = await createNodes()
 
+  let old
   for (let i = 0; i < 10; i++) {
-    await n1.simpleSend(1, [n2.genAddress], undefined, false)
+    old = await n1.simpleSend(1, [n2.genAddress], undefined, false)
   }
 
   const tail = createTail()
@@ -46,11 +52,34 @@ tape('mempool consistency', async function (t) {
 
   const pool = new Map()
 
-  tail.on('mempool-add', function (tx) {
+  let oldRemoved = false
+  let oldAdded = false
+  let replacedAdded = false
+  let replaced = null
+
+  tail.on('mempool-add', async function (tx) {
+    if (old.txid === tx.hash) {
+      t.notOk(oldRemoved, 'old tx not removed')
+      t.notOk(oldAdded, 'old tx not added twice')
+      t.pass('added old tx')
+      oldAdded = true
+    }
+    const r = await replaced
+    if (r && r.txid === tx.hash) {
+      t.notOk(replacedAdded, 'replaced tx only added once')
+      t.ok(oldRemoved, 'replaced old tx')
+      replacedAdded = true
+    }
     pool.set(tx.hash, tx)
   })
 
   tail.on('mempool-remove', function (tx) {
+    if (old.txid === tx.hash) {
+      t.ok(oldAdded, 'old tx added')
+      t.notOk(oldRemoved, 'old tx not removed twice')
+      t.pass('removed old tx')
+      oldRemoved = true
+    }
     pool.delete(tx.hash, tx)
   })
 
@@ -59,25 +88,29 @@ tape('mempool consistency', async function (t) {
   const txp = n1.simpleSend(10, [n2.genAddress], undefined, false)
 
   await txp
-  // await n1.replaceByFee(old.inputs, old.outputs)
+  replaced = n1.replaceByFee(old.inputs, old.outputs)
+  await replaced
   await sleep(10000)
   await check()
   await n1.confirm()
   await sleep(5000)
+  t.pass('after confirm')
   await check()
 
   await tail.stop()
+
+  t.ok(oldRemoved && replacedAdded, 'executed replaceByFee')
   t.end()
 
-  async function check (retry = true) {
+  async function check (retry = 3) {
     const remote = await n1.client.getMemoryPoolContent()
     const same = Object.keys(remote).sort().join('\n') === [...pool.keys()].sort().join('\n')
     if (!same && retry) {
       t.pass('not consistent check, waiting another 10s')
       await sleep(10000)
-      return check(false)
+      return check(retry - 1)
     }
-    t.same(Object.keys(remote).sort(), [...pool.keys()].sort(), 'same mempool')
+    t.same([...pool.keys()].sort(), Object.keys(remote).sort(), 'same mempool')
   }
 })
 
