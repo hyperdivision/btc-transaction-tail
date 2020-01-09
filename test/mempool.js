@@ -38,6 +38,49 @@ tape('mempool tracking', async function (t) {
   await n1.confirm()
 })
 
+tape('mempool replaceByFee', async function (t) {
+  const [n1, n2] = await createNodes()
+
+  let sawOld = false
+  let sawNew = false
+  let replace = null
+
+  const tail = createTail({
+    async transaction (tx) {
+      if (tx.hash === (await added).txid) sawOld = true
+      if (replace && tx.hash === (await replace).txid) sawNew = true
+    }
+  })
+
+  await tail.start()
+
+  const added = n1.simpleSend(1, [n2.genAddress], undefined, false)
+
+  tail.scan(0)
+
+  tail.on('mempool-add', async function (tx) {
+    const a = await added
+    if (tx.hash === a.txid) {
+      t.pass('added tx')
+      replace = await n1.replaceByFee(a.inputs, a.outputs)
+      await sleep(5000)
+      await n1.generate(10)
+    }
+  })
+
+  tail.on('mempool-remove', async function (tx) {
+    const a = await added
+    if (tx.hash === a.txid) {
+      t.pass('removed old tx')
+      await sleep(5000)
+      await tail.stop()
+      t.ok(sawNew, 'saw tx after replace')
+      t.notOk(sawOld, 'old tx never mined')
+      t.end()
+    }
+  })
+})
+
 tape.skip('mempool consistency', async function (t) {
   const [n1, n2] = await createNodes()
 
